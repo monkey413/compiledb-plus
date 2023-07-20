@@ -16,67 +16,86 @@ achieve this it uses the make options such as `-n`/`--dry-run` and `-k`/`--keep-
 to extract the compile commands. Also, it's more **cross-compiling friendly** than
 YCM-generator's fake-toolchanin approach.
 
+## Note
+
+This project is a fork of [compiledb](https://github.com/nickdiego/compiledb) maintained
+by [Nick Yamane](https://github.com/nickdiego). Since the PRs to the origin were pending and inactive for quite a long
+time, here is an attempt to patch the origin project with this new package name called `compiledb-plus`.
+
+We express our gratitude to the original author(s) for their valuable contribution which made this fork possible. Any
+issues, questions, or contributions pertaining to the additions in this fork should be directed to this repository, not
+to the original author(s).
+
+## Changes from Original
+
+- Support non-recursive make
+
 ## Installation
 
 ```
-# pip install compiledb
+# pip install compiledb-plus
 ```
+
 - Supports Python 2.x and 3.x (for now, tested only with 2.7 and 3.6 versions)
-- For bash completion support, add the content of `sh-completion/compiledb.bash` file
-  to your `.bashrc` file, for example.
-- _ZSH completion coming soon :)_
 
 ## Usage
 
-`compiledb` provides a `make` python wrapper script which, besides to execute the make
+`compiledb-plus` provides a `make` python wrapper script which, besides to execute the make
 build command, updates the JSON compilation database file corresponding to that build,
 resulting in a command-line interface similar to [Bear][bear].
 
-To generate `compile_commands.json` file using compiledb's "make wrapper" script,
+To generate `compile_commands.json` file using compiledb-plus's "make wrapper" script,
 executing Makefile target `all`:
+
 ```bash
-$ compiledb make
+$ compiledb-plus make
 ```
 
-`compiledb` forwards all the options/arguments passed after `make` subcommand to GNU Make,
+`compiledb-plus` forwards all the options/arguments passed after `make` subcommand to GNU Make,
 so one can, for example, generate `compile_commands.json` using `core/main.mk`
 as main makefile (`-f` flag), starting the build from `build` directory (`-C` flag):
+
 ```bash
-$ compiledb make -f core/main.mk -C build
+$ compiledb-plus make -f core/main.mk -C build
 ```
 
-By default, `compiledb make` generates the compilation database and runs the actual build
+By default, `compiledb-plus make` generates the compilation database and runs the actual build
 command requested (acting as a make wrapper), the build step can be skipped using the `-n`
 or `--no-build` options.
+
 ```bash
-$ compiledb -n make
+$ compiledb-plus -n make
 ```
 
-`compiledb` base command has been designed so that it can be used to parse compile commands
+`compiledb-plus` base command has been designed so that it can be used to parse compile commands
 from arbitrary text files (or stdin), assuming it has a build log (ideally generated using
 `make -Bnwk` command), and generates the corresponding JSON Compilation database.
 
 For example, to generate the compilation database from `build-log.txt` file, use the following
 command.
+
 ```bash
-$ compiledb --parse build-log.txt
+$ compiledb-plus --parse build-log.txt
 ```
 
 or its equivalent:
+
 ```bash
-$ compiledb < build-log.txt
+$ compiledb-plus < build-log.txt
 ```
 
 Or even, to pipe make's output and print the compilation database to the standard output:
+
 ```bash
-$ make -Bnwk | compiledb -o-
+$ make -Bnwk | compiledb-plus -o-
 ```
 
-By default `compiledb` generates a JSON compilation database in the "arguments" list
+By default `compiledb-plus` generates a JSON compilation database in the "arguments" list
 [format](https://clang.llvm.org/docs/JSONCompilationDatabase.html). The "command" string
 format is also supported through the use of the `--command-style` flag:
+
 ```bash
-$ compiledb --command-style make
+$ compiledb-plus --command-style make
 ```
 
 ## Testing / Contributing
@@ -93,6 +112,7 @@ could use it with some great tools, such as:
 - [Neovim][neovim] + [ALE][ale] + [ccls][ccls]
 
 Notice:
+
 - _Windows: tested on Windows 10 with cmd, wsl(Ubuntu), mingw32_
 - _Linux: tested only on Arch Linux and Ubuntu 18 so far_
 - _Mac: tested on macOS 10.13 and 10.14_
@@ -100,20 +120,35 @@ Notice:
 Patches are always welcome :)
 
 ## License
+
 GNU GPLv3
 
 [compdb]: https://clang.llvm.org/docs/JSONCompilationDatabase.html
+
 [ycm]: https://github.com/Valloric/YouCompleteMe
+
 [rtags]: https://github.com/Andersbakken/rtags
+
 [chrom]: https://github.com/arakashic/chromatica.nvim
+
 [ycm-gen]: https://github.com/rdnetto/YCM-Generator
+
 [bear]: https://github.com/rizsotto/Bear
+
 [aosp]: https://source.android.com/
+
 [docker]: https://www.docker.com/
+
 [vim]: https://www.vim.org/
+
 [neovim]: https://neovim.io/
+
 [lsp]: https://github.com/autozimu/LanguageClient-neovim
+
 [cquery]: https://github.com/cquery-project/cquery
+
 [deoplete]: https://github.com/Shougo/deoplete.nvim
+
 [ccls]: https://github.com/MaskRay/ccls
+
 [ale]: https://github.com/w0rp/ale

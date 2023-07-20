@@ -22,7 +22,7 @@ setup(
     url=about['__url__'],
     license=about['__license__'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -46,13 +46,13 @@ setup(
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*',
     entry_points={
         'console_scripts': [
-            'compiledb=compiledb.cli:cli',
+            'compiledb-plus=compiledb.cli:cli',
         ],
     },
     project_urls={
-        'Issue Tracking': 'https://github.com/nickdiego/compiledb/issues',
+        'Issue Tracking': 'https://github.com/maxnilz/compiledb/issues',
         # 'Funding': 'https://donate.pypi.org',
-        # 'Samples': 'https://github.com/nickdiego/compiledb/samples',
+        # 'Samples': 'https://github.com/maxnilz/compiledb/samples',
     },
 )
 
