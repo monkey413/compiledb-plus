@@ -18,7 +18,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import bashlex
+# import bashlex
+import shlex
 import re
 import logging
 
@@ -57,7 +58,6 @@ class Error(Exception):
 
     def __str__(self):
         return "Error: {}".format(self.msg)
-
 
 def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add_predefined_macros=False,
                     use_full_path=False, extra_wrappers=[]):
@@ -107,7 +107,7 @@ def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add
 
         commands = []
         try:
-            commands = CommandProcessor.process(line, working_dir)
+            commands = CommandProcessor.process(line)
         except Exception as err:
             msg = 'Failed to parse build command [Details: ({}) {}]'.format(type(err), str(err))
             skip_line(line, msg)
@@ -137,7 +137,7 @@ def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add
 
             # add entry to database
             tokens = c['tokens']
-            arguments = [unescape(a) for a in tokens[len(wrappers):]]
+            arguments = [(a) for a in tokens[len(wrappers):]]
 
             compiler = get_compiler(arguments[0])
 
@@ -168,50 +168,53 @@ def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add
     return result
 
 
-class SubstCommandVisitor(bashlex.ast.nodevisitor):
-    """Uses bashlex to parse and process sh/bash substitution commands.
-       May result in a parsing exception for invalid commands."""
-    def __init__(self):
-        self.substs = []
+# class SubstCommandVisitor():
+#     """Uses bashlex to parse and process sh/bash substitution commands.
+#        May result in a parsing exception for invalid commands."""
+#     def __init__(self):
+#         self.substs = []
+#
+#     def visitcommandsubstitution(self, n, cmd):
+#         self.substs.append(n)
+#         return False
 
-    def visitcommandsubstitution(self, n, cmd):
-        self.substs.append(n)
-        return False
 
-
-class CommandProcessor(bashlex.ast.nodevisitor):
+class CommandProcessor():
     """Uses bashlex to parse and traverse the resulting bash AST
        looking for and extracting compilation commands."""
     @staticmethod
-    def process(line, wd):
-        trees = bashlex.parser.parse(line)
-        if not trees:
-            return []
-        for tree in trees:
-            svisitor = SubstCommandVisitor()
-            svisitor.visit(tree)
-            substs = svisitor.substs
-            substs.reverse()
-            preprocessed = list(line)
-            for s in substs:
-                start, end = s.command.pos
-                s_cmd = line[start:end]
-                out = run_cmd(s_cmd, shell=True, cwd=wd)
-                start, end = s.pos
-                preprocessed[start:end] = out.strip()
-            preprocessed = ''.join(preprocessed)
-
-        trees = bashlex.parser.parse(preprocessed)
-        processor = CommandProcessor(preprocessed, wd)
-        for tree in trees:
-            processor.do_process(tree)
+    def process(line):
+        processor = CommandProcessor(line)
+        processor.do_process(line)
         return processor.commands
+    #     # trees = bashlex.parser.parse(line, False)
+    #     if not trees:
+    #         return []
+    #     for tree in trees:
+    #         svisitor = SubstCommandVisitor()
+    #         svisitor.visit(tree)
+    #         substs = svisitor.substs
+    #         substs.reverse()
+    #         preprocessed = list(line)
+    #         for s in substs:
+    #             start, end = s.command.pos
+    #             s_cmd = line[start:end]
+    #             out = run_cmd(s_cmd, shell=True, cwd=wd)
+    #             start, end = s.pos
+    #             preprocessed[start:end] = out.strip()
+    #         preprocessed = ''.join(preprocessed)
+    #
+    #     trees = bashlex.parser.parse(preprocessed)
+    #     processor = CommandProcessor(preprocessed, wd)
+    #     for tree in trees:
+    #         processor.do_process(tree)
+    #     return processor.commands
 
-    def __init__(self, line, wd):
-        self.line = line
-        self.wd = wd
+    def __init__(self, line):
         self.commands = []
         self.reset()
+        self.line = line
+        self.cmd = line
 
     def reset(self):
         self.compiler = None
@@ -220,31 +223,43 @@ class CommandProcessor(bashlex.ast.nodevisitor):
         self.tokens = []
         self.wrappers = []
 
-    def do_process(self, tree):
-        self.visit(tree)
+    def do_process(self, line):
+        splitted_line = shlex.split(line)
+        for word in splitted_line:
+            if self.compiler is None:
+                if ((cc_compile_regex.match(word) or cpp_compile_regex.match(word)) and
+                        word not in compiler_wrappers):
+                    self.compiler = word
+                else:
+                    self.wrappers.append(word)
+            elif (file_regex.match(word)):
+                self.filepath = word
+            self.tokens.append(word)
         self.check_last_cmd()
         return self.commands
 
-    def visitcommand(self, node, cmd):
-        self.check_last_cmd()
-        self.cmd = self.line[node.pos[0]:node.pos[1]]
-        logger.debug('New command: {}'.format(self.cmd))
-        return True
+    # def visitcommand(self, node, cmd):
+    #     self.check_last_cmd()
+    #     self.cmd = self.line[node.pos[0]:node.pos[1]]
+    #     logger.debug('New command: {}'.format(self.cmd))
+    #     print("cmd: %s" % cmd)
+    #     print(self.cmd)
+    #     return True
 
-    def visitword(self, node, word):
-        # Check if it looks like an entry of interest and
-        # and try to determine the compiler
-        if self.compiler is None:
-            if ((cc_compile_regex.match(word) or cpp_compile_regex.match(word)) and
-                    word not in compiler_wrappers):
-                self.compiler = word
-            else:
-                self.wrappers.append(word)
-        elif (file_regex.match(word)):
-            self.filepath = word
-
-        self.tokens.append(word)
-        return True
+    # def visitword(self, node, word):
+    #     # Check if it looks like an entry of interest and
+    #     # and try to determine the compiler
+    #     if self.compiler is None:
+    #         if ((cc_compile_regex.match(word) or cpp_compile_regex.match(word)) and
+    #                 word not in compiler_wrappers):
+    #             self.compiler = word
+    #         else:
+    #             self.wrappers.append(word)
+    #     elif (file_regex.match(word)):
+    #         self.filepath = word
+    #     print("word: %s" % (word))
+    #     self.tokens.append(word)
+    #     return True
 
     def check_last_cmd(self):
         # check if it seems to be a compilation command
