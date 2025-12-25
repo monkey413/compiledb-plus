@@ -59,7 +59,7 @@ class Error(Exception):
     def __str__(self):
         return "Error: {}".format(self.msg)
 
-def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add_predefined_macros=False,
+def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, other_macros="", add_predefined_macros=False,
                     use_full_path=False, extra_wrappers=[]):
     result = ParsingResult()
 
@@ -149,6 +149,9 @@ def parse_build_log(build_log, proj_dir, exclude_files, command_style=False, add
                 arguments[0] = compiler.full_path
 
             command_str = ' '.join(arguments)
+
+            if other_macros != "":
+                arguments.extend(other_macros.split(","))
 
             logger.debug("Adding command {}: {}".format(len(result.compdb), command_str))
 
